@@ -11,7 +11,7 @@ var (
 )
 
 func main() {
-  discord, err := discordgo.New("Bot <INSERT REALLY LONG BOT KEY HERE>")
+  discord, err := discordgo.New("Bot NTAzOTMyNDc0NDk0MDI1NzM5.Dq-QhQ.vTspVjBGmOSGukydSr1_8HxNUpM")
   errCheck("error creating discord session", err)
   user, err := discord.User("@me")
   errCheck("error retrieving account", err)
@@ -19,7 +19,7 @@ func main() {
   botID = user.ID
   discord.AddHandler(commandHandler)
   discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-        err = discord.UpdateStatus(0, "A friendly helpful bot!")
+        err = discord.UpdateStatus(0, "A bot made with Golang")
         if err != nil {
             fmt.Println("Error attempting to set my status")
         }
@@ -55,4 +55,3 @@ func commandHandler(discord *discordgo.Session, message *discordgo.MessageCreate
 
     fmt.Printf("Message: %+v || From: %s\n", message.Message, message.Author)
 }
-H
