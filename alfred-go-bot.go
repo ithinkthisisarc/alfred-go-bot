@@ -1,57 +1,53 @@
 package main
 
 import (
- "fmt"
- "github.com/bwmarrin/discordgo"
+    "fmt"
+    "github.com/bwmarrin/discordgo"
+    gocfg "gocfg-dev"
+    "log"
 )
 
-var (
-    commandPrefix string
-    botID         string
-)
+type bot struct {
+    Config *AppConf
+    ConfigManager *gocfg.ConfigManager
+    Session *discordgo.Session
+}
 
-func main() {
-  discord, err := discordgo.New("Bot NTAzOTMyNDc0NDk0MDI1NzM5.Dq-QhQ.vTspVjBGmOSGukydSr1_8HxNUpM")
-  errCheck("error creating discord session", err)
-  user, err := discord.User("@me")
-  errCheck("error retrieving account", err)
-  
-  botID = user.ID
-  discord.AddHandler(commandHandler)
-  discord.AddHandler(func(discord *discordgo.Session, ready *discordgo.Ready) {
-        err = discord.UpdateStatus(0, "A bot made with Golang")
-        if err != nil {
-            fmt.Println("Error attempting to set my status")
+var err error
+var Bot *bot
+
+func init() {
+    Bot = &bot{}
+}
+
+func (b *bot) Run() {
+
+    LoadConfig(b)
+    b.Session, err = discordgo.New(fmt.Sprintf("Bot %s", b.Config.Auth.Token))
+    FatalCheck("Could't create Discord session", err)
+
+    // Handlers
+    b.Session.AddHandler(func (s *discordgo.Session, nm *discordgo.MessageCreate) {
+        if nm.Content == "!help" {
+            s.ChannelMessageSend(nm.ChannelID, "Some help for you, my friend! <3")
         }
-        servers := discord.State.Guilds
-        fmt.Printf("SuperAwesomeOmegaTutorBot has started on %d servers", len(servers))
     })
-  
-  err = discord.Open()
-    errCheck("Error opening connection to Discord", err)
-    defer discord.Close()
 
-    commandPrefix = "!"
+    // Client Ready event
+    if err = b.Session.Open(); err != nil {
+        FatalReport("Could't open Discord websocket connection", err)
+    }
+    defer b.Session.Close()
+
+    fmt.Println("|> Handlers attached")
+
+    if _, err = b.Session.UserUpdateStatus("invisible"); err != nil {
+        log.Printf("Could't change status to \"invisible\": \n\t%s",
+            err.Error())
+    }
+
+    fmt.Printf("|> Bot started and logged as:\n\t[ID: %s | Name: %s]\n",
+        b.Session.State.User.ID, b.Session.State.User.Username)
 
     <-make(chan struct{})
-    
-}
-
-func errCheck(msg string, err error) {
-    if err != nil {
-        fmt.Printf("%s: %+v", msg, err)
-        panic(err)
-    }
-}
-
-func commandHandler(discord *discordgo.Session, message *discordgo.MessageCreate) {
-    user := message.Author
-    if user.ID == botID || user.Bot {
-        //Do nothing because the bot is talking
-        return
-    }
-
-    content := message.Content
-
-    fmt.Printf("Message: %+v || From: %s\n", message.Message, message.Author)
 }
